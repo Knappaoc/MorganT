@@ -6,27 +6,29 @@ import java.io.File
 fun main() {
     println("Answer 1: ${stepOne()}")
     println("Answer 2: ${stepTwo()}")
-//    println("median durations were ${measureMedians(listOf(::stepOne, ::stepTwo)).joinToString(" and ")} respectively")
+    println("median durations were ${measureMedians(listOf(::stepOne, ::stepTwo)).joinToString(" and ")} respectively")
 }
 
 fun Char.toPriority(): Int = if (isLowerCase()) this - 'a' + 1 else this - 'A' + 27
 
 fun stepOne(): Int =
-     File("data/day_3.txt").useLines { lines ->
-        val sections = lines.map {
-            it.substring(0, it.length/2) to it.substring(it.length/2, it.length)
-        }.toList()
-
-        val commonItems = sections.map { (first, second) ->
-            first.toCharArray().toSet().intersect(second.toCharArray().toSet())
-        }
-
-         commonItems.sumOf { it.single().toPriority() }
-     }
+    File("data/day_3.txt").useLines { rucksacks ->
+        val sections = rucksacks.map { line -> line.run { substring(0, length / 2) to substring(length / 2, length) } }
+        val commonItemTypes = sections.map { (first, second) -> listOf(first, second).map { it.toCharArray().toSet() }.commonElements().single() }
+        commonItemTypes.sumOf { it.toPriority() }
+    }
 
 fun stepTwo(): Int =
-    File("data/day_3.txt").useLines { lines ->
-        val groupLines = lines.chunked(3)
-        val badgeSymbols = groupLines.map { lines -> lines.map { it.toCharArray().toSet() }.reduce { acc, next -> acc.intersect(next) }.single() }
-        badgeSymbols.map { it.toPriority() }.sum()
+    File("data/day_3.txt").useLines { rucksacks ->
+        rucksacks
+            .chunked(3)
+            .map { groupRucksacks ->
+                groupRucksacks
+                    .map { rucksack -> rucksack.toCharArray().toSet() }
+                    .commonElements()
+                    .single()
+            }
+            .sumOf { it.toPriority() }
     }
+
+fun <T> List<Set<T>>.commonElements() = reduce { acc, next -> acc.intersect(next) }
