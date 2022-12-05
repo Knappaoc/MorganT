@@ -1,12 +1,12 @@
 package day_2
 
-import measureMedians
+import measureFastestExecutionTimes
 import java.io.File
 
 fun main() {
     println("Answer 1: ${stepOne()}")
     println("Answer 2: ${stepTwo()}")
-    println("median durations were ${measureMedians(listOf(::stepOne, ::stepTwo)).joinToString(" and ")} respectively")
+    println("Fastest execution times ${measureFastestExecutionTimes(listOf(::stepOne, ::stepTwo)).joinToString(" and ")} respectively")
 }
 
 enum class Move(val symbols: Set<String>, val value: Int) {
