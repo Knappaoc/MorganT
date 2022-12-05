@@ -1,12 +1,12 @@
 package day_4
 
-import measureMedians
+import measureFastestExecutionTimes
 import java.io.File
 
 fun main() {
     println("Answer 1: ${stepOne()}")
     println("Answer 2: ${stepTwo()}")
-    println("median durations were ${measureMedians(listOf(::stepOne, ::stepTwo)).joinToString(" and ")} respectively")
+    println("Fastest execution times ${measureFastestExecutionTimes(listOf(::stepOne, ::stepTwo)).joinToString(" and ")} respectively")
 }
 
 fun String.toRange() = this.split("-").let { it[0].toInt() to it[1].toInt() }.run { first..second }

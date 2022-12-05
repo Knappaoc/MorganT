@@ -1,12 +1,12 @@
 package day_3
 
-import measureMedians
+import measureFastestExecutionTimes
 import java.io.File
 
 fun main() {
     println("Answer 1: ${stepOne()}")
     println("Answer 2: ${stepTwo()}")
-    println("median durations were ${measureMedians(listOf(::stepOne, ::stepTwo)).joinToString(" and ")} respectively")
+    println("Fastest execution times ${measureFastestExecutionTimes(listOf(::stepOne, ::stepTwo)).joinToString(" and ")} respectively")
 }
 
 fun Char.toPriority(): Int = if (isLowerCase()) this - 'a' + 1 else this - 'A' + 27
