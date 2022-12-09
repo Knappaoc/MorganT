@@ -4,97 +4,58 @@ import measureFastestExecutionTimes
 import java.io.File
 import kotlin.math.abs
 
-
 fun main() {
     println("Answer 1: ${stepOne()}")
     println("Answer 2: ${stepTwo()}")
-//    println("Fastest execution times ${measureFastestExecutionTimes(listOf(::stepOne, ::stepTwo)).joinToString(" and ")} respectively")
+    println("Fastest execution times ${measureFastestExecutionTimes(listOf(::stepOne, ::stepTwo)).joinToString(" and ")} respectively")
 }
 
-data class Position(val x: Int = 0, val y: Int = 0)
-fun Position.inContact(other: Position) = abs(x - other.x) <= 1 && abs(y - other.y) <= 1
-data class State(val head: Position = Position(), val tail: Position = Position())
+data class Vector2D(val x: Int = 0, val y: Int = 0){
+    operator fun plus(other: Vector2D) = Vector2D(x + other.x, y + other.y)
+    operator fun minus(other: Vector2D) = Vector2D(x - other.x, y - other.y)
+    private infix fun touching(other: Vector2D) = (this - other).let { abs(it.x) <= 1 && abs(it.y) <= 1 }
+    fun trail(leader: Vector2D) =
+        if (this touching leader) {
+            this
+        } else {
+            this + (leader - this).let { (dx, dy) -> Vector2D(if (dx != 0) dx/abs(dx) else 0, if (dy != 0) dy/abs(dy) else 0) }
+        }
 
-fun State.move(direction: String): State {
-    val nextHead = when(direction){
-        "R" -> head.copy(x= head.x + 1)
-        "L" -> head.copy(x= head.x - 1)
-        "U" -> head.copy(y= head.y + 1)
-        "D" -> head.copy(y= head.y - 1)
-        else -> throw Error("Unexpected direction encountered \"$direction\"")
+}
+
+enum class Direction(val vector: Vector2D) {
+    U(Vector2D(0, 1)),
+    R(Vector2D(1, 0)),
+    D(Vector2D(0, -1)),
+    L(Vector2D(-1, 0)),
+}
+
+data class Rope(val head: Vector2D = Vector2D(), val tail: Vector2D = Vector2D()){
+    fun moveToward(direction: Direction): Rope{
+        val nextHead = head + direction.vector;
+        val nextTail = tail.trail(nextHead)
+        return Rope(nextHead, nextTail);
     }
-    val nextTail = if (!nextHead.inContact(tail)) when {
-        nextHead.x == tail.x && nextHead.y != tail.y -> {
-            tail.copy(y = tail.y + if (nextHead.y > tail.y) 1 else -1 )
-        }
-        nextHead.x != tail.x && nextHead.y == tail.y -> {
-            tail.copy(x = tail.x + if (nextHead.x > tail.x) 1 else -1 )
-        }
-        else -> {
-            tail.copy( // Move diagonally
-                x = tail.x + if (nextHead.x > tail.x) 1 else -1,
-                y = tail.y + if (nextHead.y > tail.y) 1 else -1
-            )
-        }
-    } else{
-        tail.copy()
-    }
-    return State(nextHead, nextTail)
 }
 
 fun stepOne(): Int  {
-    val moves = File("data/day_9.txt").readLines().map { it.split(" ") }.map { it[0] to it[1].toInt() }
+    val moves = File("data/day_9.txt").readLines().map { it.split(" ") }.map { Direction.valueOf(it[0]) to it[1].toInt() }
     val steps = moves.flatMap { (direction, amount) -> List(amount) { direction } }
-
-    val simulation = steps.scan(State()) { state, direction -> state.move(direction)}
-
-    return simulation.map { it.tail }.toSet().size;
+    val simulation = steps.scan(Rope()) { rope, direction -> rope.moveToward(direction)}
+    return simulation.map { it.tail }.toSet().size
 }
 
-data class SnappedState(val knots: List<Position> = List(10) { Position() })
-
-fun Position.trail(parent: Position) =
-    if (!parent.inContact(this)) when {
-        parent.x == x && parent.y != y -> {
-            copy(y = y + if (parent.y > y) 1 else -1 )
-        }
-        parent.x != x && parent.y == y -> {
-            copy(x = x + if (parent.x > x) 1 else -1 )
-        }
-        else -> {
-            copy( // Move diagonally
-                x = x + if (parent.x > x) 1 else -1,
-                y = y + if (parent.y > y) 1 else -1
-            )
-        }
-    } else{
-        copy()
+data class SnappedRope(val knots: List<Vector2D> = List(10) { Vector2D() }){
+    fun moveToward(direction: Direction): SnappedRope {
+        val nextHead = knots.first() + direction.vector;
+        val nextKnots = knots.drop(1).fold(mutableListOf(nextHead)){ acc, knot -> acc.apply { add(knot.trail(last())) } }
+        return SnappedRope(nextKnots)
     }
-
-
-fun SnappedState.move(direction: String): SnappedState {
-    val head = knots.first()
-    val nextHead = when(direction){
-        "R" -> head.copy(x= head.x + 1)
-        "L" -> head.copy(x= head.x - 1)
-        "U" -> head.copy(y= head.y + 1)
-        "D" -> head.copy(y= head.y - 1)
-        else -> throw Error("Unexpected direction encountered \"$direction\"")
-    }
-
-    val nextKnots = mutableListOf<Position>(nextHead)
-    for(index in 1 until knots.size){
-        nextKnots.add(knots[index].trail(nextKnots.last()));
-    }
-    return SnappedState(nextKnots.toList())
 }
-
 
 fun stepTwo(): Int {
-    val moves = File("data/day_9.txt").readLines().map { it.split(" ") }.map { it[0] to it[1].toInt() }
+    val moves = File("data/day_9.txt").readLines().map { it.split(" ") }.map { Direction.valueOf(it[0]) to it[1].toInt() }
     val steps = moves.flatMap { (direction, amount) -> List(amount) { direction } }
-
-    val simulation = steps.scan(SnappedState()) { state, direction -> state.move(direction)}
-
-    return simulation.map { it.knots.last() }.toSet().size; //2717
+    val simulation = steps.scan(SnappedRope()) { rope, direction -> rope.moveToward(direction)}
+    return simulation.map { it.knots.last() }.toSet().size
 }
