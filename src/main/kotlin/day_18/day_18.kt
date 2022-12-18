@@ -40,7 +40,7 @@ fun Vector3D.expandToVolume(exclude: Set<Vector3D>, bounds: Bounds3D): Set<Vecto
     var expansion = setOf(this)
     while (expansion.isNotEmpty()){
         volume.addAll(expansion)
-        expansion = volume
+        expansion = expansion
             .flatMap { it.faceNeighbours() }
             .filter { it !in exclude }
             .filter { it.x in bounds.xs && it.y in bounds.ys && it.z in bounds.zs }
